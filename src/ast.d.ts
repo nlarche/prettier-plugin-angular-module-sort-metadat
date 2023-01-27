@@ -4,15 +4,17 @@ interface Position {
 }
 interface NodeBase {
   type:
-    | 'Program'
-    | 'ClassDeclaration'
-    | 'CallExpression'
-    | 'ImportDeclaration'
-    | 'Property'
-    | 'Identifier'
-    | 'Decorator'
-    | 'ObjectExpression'
-    | 'ArrayExpression';
+      | 'Program'
+      | 'ClassDeclaration'
+      | 'CallExpression'
+      | 'ImportDeclaration'
+      | 'Property'
+      | 'Identifier'
+      | 'Decorator'
+      | 'ObjectExpression'
+      | 'ArrayExpression'
+      | 'ImportDefaultSpecifier'
+      | 'ImportSpecifier';
   range: [number, number];
   loc: { start: Position; end: Position };
 }
@@ -22,7 +24,7 @@ interface NodeBaseWithName extends NodeBase {
 }
 
 interface Value extends NodeBase {
-  elements: (NodeBaseWithName | CallExpression)[];
+  elements?: (NodeBaseWithName | CallExpression)[];
 }
 
 interface Property extends NodeBase {
@@ -51,13 +53,17 @@ interface Source extends NodeBase {
   value: string;
 }
 
-interface Specifier extends NodeBase {
+interface ImportSpecifier extends NodeBase {
   imported: NodeBaseWithName;
 }
 
 interface ImportDeclaration extends NodeBase {
   source: Source;
-  specifiers: Specifier[];
+  specifiers: ImportSpecifier[];
+}
+
+interface ImportDefaultSpecifier extends NodeBase {
+  local: NodeBaseWithName;
 }
 
 interface ASTBody extends NodeBase {

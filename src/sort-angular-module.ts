@@ -45,9 +45,10 @@ function sortElementByFroup(group: Map<GroupName, Element[]>, name: GroupName): 
 }
 
 export function mapImportPathByImportName(
-    node: ImportDeclaration,
-    importPathByImportName: Map<ImportName, ImportPath>,
-) {
+    node: ImportDeclaration
+): Map<ImportName, ImportPath> {
+  const importPathByImportName = new Map<ImportName, ImportPath>();
+
   node.specifiers.forEach((importSpecifier: ImportSpecifier | ImportDefaultSpecifier) => {
     if (isImportDefaultSpecifier(importSpecifier)) {
       importPathByImportName.set(importSpecifier.local.name, node.source.value);
@@ -55,6 +56,7 @@ export function mapImportPathByImportName(
       importPathByImportName.set(importSpecifier.imported.name, node.source.value);
     }
   });
+  return importPathByImportName;
 }
 
 function getElementName(element: Element): ImportName {

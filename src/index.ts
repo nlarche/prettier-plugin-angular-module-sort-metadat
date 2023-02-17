@@ -13,11 +13,13 @@ function wrappedParse(parse: Parser<any>['parse']): Parser<any>['parse'] {
 
 function preprocess(ast: AstTree): AST {
   const body = ast.body;
-  const importPathByImportName = new Map<ImportName, ImportPath>();
-
-  traverse(body as any, {
+  let importPathByImportName = new Map<ImportName, ImportPath>();
+  traverse(body, {
     ImportDeclaration(node: ImportDeclaration) {
-      mapImportPathByImportName(node, importPathByImportName);
+      importPathByImportName = new Map([
+        ...importPathByImportName.entries(),
+        ...mapImportPathByImportName(node).entries()
+      ]);
     },
     CallExpression(node: CallExpression) {
       sortImportMetadata(node, importPathByImportName);

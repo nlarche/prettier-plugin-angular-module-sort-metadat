@@ -12,7 +12,7 @@ function getObjectKeys<T extends Object>(object: T) {
 
 const skippedKeys = ['loc', 'range', 'type'];
 function traverseNodes(parent: AstNode, options: TraverseOption) {
-  if (!parent.type) {
+  if (!parent || !parent.type) {
     return;
   }
   const visitor = options[parent.type] as VisitNodeFunction<AstNode>;

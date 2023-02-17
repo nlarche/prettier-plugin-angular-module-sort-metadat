@@ -1,4 +1,12 @@
-import {util} from "prettier";
+import { util } from 'prettier';
+import {
+  AstNode,
+  CallExpression,
+  ImportDeclaration,
+  ImportDefaultSpecifier,
+  ImportSpecifier,
+  NodeBaseWithName,
+} from './ast';
 
 const angularModule = '@angular' as const;
 const appModule = '@app' as const;
@@ -6,7 +14,6 @@ const customModule = '@' as const;
 const relativePathModule = './' as const;
 type GroupName = typeof angularModule | typeof customModule | typeof appModule | typeof relativePathModule;
 type Element = NodeBaseWithName | CallExpression;
-type ImportsElement = ImportDefaultSpecifier | ImportSpecifier;
 
 export type ImportName = string;
 export type ImportPath = string;
@@ -15,11 +22,11 @@ const isCallExpression = (element: Element): element is CallExpression => {
   return element.type === 'CallExpression';
 };
 
-const isImportDefaultSpecifier = (element: ImportsElement): element is ImportDefaultSpecifier => {
+const isImportDefaultSpecifier = (element: AstNode): element is ImportDefaultSpecifier => {
   return element.type === 'ImportDefaultSpecifier';
 };
 
-const isImportSpecifier = (element: ImportsElement): element is ImportSpecifier => {
+const isImportSpecifier = (element: AstNode): element is ImportSpecifier => {
   return element.type === 'ImportSpecifier';
 };
 
@@ -37,19 +44,21 @@ function sortElementByFroup(group: Map<GroupName, Element[]>, name: GroupName): 
   return [];
 }
 
-export function mapImportPathByImportName(node: ASTNode, importPathByImportName: Map<ImportName, ImportPath>) {
-  const importDeclaration = node as unknown as ImportDeclaration;
-  importDeclaration.specifiers.forEach(s => {
-    if (isImportDefaultSpecifier(s)) {
-      importPathByImportName.set(s.local.name, importDeclaration.source.value);
-    } else if (isImportSpecifier(s)) {
-      importPathByImportName.set(s.imported.name, importDeclaration.source.value);
+export function mapImportPathByImportName(
+    node: ImportDeclaration,
+    importPathByImportName: Map<ImportName, ImportPath>,
+) {
+  node.specifiers.forEach((importSpecifier: ImportSpecifier | ImportDefaultSpecifier) => {
+    if (isImportDefaultSpecifier(importSpecifier)) {
+      importPathByImportName.set(importSpecifier.local.name, node.source.value);
+    } else if (isImportSpecifier(importSpecifier)) {
+      importPathByImportName.set(importSpecifier.imported.name, node.source.value);
     }
   });
 }
 
 function getElementName(element: Element): ImportName {
-  return isCallExpression(element) ? element.callee.object.name : "name" in element ? element.name : "";
+  return isCallExpression(element) ? element.callee.object.name : 'name' in element ? element.name : '';
 }
 
 function computeSortedMetadata(elements: Element[], importMaps: Map<ImportName, ImportPath>): Element[] {
@@ -66,7 +75,7 @@ function computeSortedMetadata(elements: Element[], importMaps: Map<ImportName, 
     if (elementImportsPath?.startsWith(angularModule)) {
       updateMapGroup(elementByGroup, element, angularModule);
     } else if (elementImportsPath?.startsWith(appModule)) {
-      updateMapGroup(elementByGroup, element, appModule)
+      updateMapGroup(elementByGroup, element, appModule);
     } else if (elementImportsPath?.startsWith(relativePathModule)) {
       updateMapGroup(elementByGroup, element, relativePathModule);
     } else {
@@ -81,22 +90,14 @@ function computeSortedMetadata(elements: Element[], importMaps: Map<ImportName, 
   ];
 }
 
-export function sortImportMetadata(node: ASTNode, importPathByImportName: Map<ImportName, ImportPath>) {
-  const declaration = node.declaration;
-  const decorators: Decorator[] = declaration?.decorators;
-
-  if (declaration?.type === 'ClassDeclaration' && decorators?.length) {
-    const ngModule: Decorator | undefined = decorators.find(
-        decorator => decorator.expression.callee.name === 'NgModule',
+export function sortImportMetadata(node: CallExpression, importPathByImportName: Map<ImportName, ImportPath>) {
+  if (node.callee.name === 'NgModule') {
+    node.arguments.forEach(argument =>
+        argument.properties.forEach(property => {
+          if (property.value.elements) {
+            property.value.elements = computeSortedMetadata(property.value.elements, importPathByImportName);
+          }
+        }),
     );
-    if (ngModule) {
-      ngModule.expression.arguments.forEach(p =>
-          p.properties.forEach(a => {
-            if (a.value.elements) {
-              a.value.elements = computeSortedMetadata(a.value.elements, importPathByImportName)
-            }
-          }),
-      );
-    }
   }
 }

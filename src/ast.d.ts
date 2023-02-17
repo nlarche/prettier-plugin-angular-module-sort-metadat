@@ -1,74 +1,97 @@
-interface Position {
+export interface Position {
   line: number;
   column: number;
 }
-interface NodeBase {
-  type:
-      | 'Program'
-      | 'ClassDeclaration'
-      | 'CallExpression'
-      | 'ImportDeclaration'
-      | 'Property'
-      | 'Identifier'
-      | 'Decorator'
-      | 'ObjectExpression'
-      | 'ArrayExpression'
-      | 'ImportDefaultSpecifier'
-      | 'ImportSpecifier';
+
+export type AstNode =
+    | CallExpression
+    | ImportDeclaration
+    | AstBody
+    // | Program
+    // | ClassDeclaration
+    | CallExpression
+    | ImportDeclaration
+    | Property
+    // | Identifier
+    | Decorator
+    // | ObjectExpression
+    // | ArrayExpression
+    | ImportDefaultSpecifier
+    | ImportSpecifier
+    | Argument
+    | Source
+    | Declaration
+    | AstTree
+    | Value;
+
+export interface NodeBase {
+  type: AstNode['type'];
   range: [number, number];
   loc: { start: Position; end: Position };
 }
 
-interface NodeBaseWithName extends NodeBase {
+export interface NodeBaseWithName extends NodeBase {
   name: string;
 }
 
-interface Value extends NodeBase {
+export interface Value extends NodeBase {
+  type: 'Value';
   elements?: (NodeBaseWithName | CallExpression)[];
 }
 
-interface Property extends NodeBase {
+export interface Property extends NodeBase {
+  type: 'Property';
   key: NodeBaseWithName;
   value: Value;
 }
 
-interface Argument extends NodeBase {
+export interface Argument extends NodeBase {
+  type: 'Argument';
   properties: Property[];
 }
 
-interface CallExpression extends NodeBase {
+export interface CallExpression extends NodeBase {
+  type: 'CallExpression';
   callee: { name: 'NgModule' | string; object: NodeBaseWithName };
   arguments: Argument[];
 }
 
-interface Decorator extends NodeBase {
+export interface Decorator extends NodeBase {
+  type: 'Decorator';
   expression: CallExpression;
 }
 
-interface Declaration extends NodeBase {
+export interface Declaration extends NodeBase {
+  type: 'Declaration';
   decorators: Decorator[];
 }
 
-interface Source extends NodeBase {
+export interface Source extends NodeBase {
+  type: 'Source';
   value: string;
 }
 
-interface ImportSpecifier extends NodeBase {
+export interface ImportSpecifier extends NodeBase {
+  type: 'ImportSpecifier';
   imported: NodeBaseWithName;
 }
 
-interface ImportDeclaration extends NodeBase {
+export interface ImportDeclaration extends NodeBase {
+  type: 'ImportDeclaration';
   source: Source;
-  specifiers: ImportSpecifier[];
+  specifiers: (ImportSpecifier | ImportDefaultSpecifier)[];
 }
 
-interface ImportDefaultSpecifier extends NodeBase {
+export interface ImportDefaultSpecifier extends NodeBase {
+  type: 'ImportDefaultSpecifier';
   local: NodeBaseWithName;
 }
 
-interface ASTBody extends NodeBase {
-  body: ASTNode[];
+export interface AstTree extends NodeBase {
+  type: 'AstTree';
+  body: AstBody[];
 }
-interface ASTNode extends NodeBase {
+export interface AstBody extends NodeBase {
+  type: 'AstBody';
   declaration: Declaration;
 }

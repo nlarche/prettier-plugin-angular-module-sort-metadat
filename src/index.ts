@@ -1,11 +1,8 @@
 import { AST, Parser } from 'prettier';
 import { parsers as tsParsers } from 'prettier/parser-typescript';
-import {
-  ImportName,
-  ImportPath,
-  mapImportPathByImportName,
-  sortImportMetadata
-} from './sort-angular-module';
+import { ImportName, ImportPath, mapImportPathByImportName, sortImportMetadata } from './sort-angular-module';
+import { AstNode, AstTree, CallExpression, ImportDeclaration, ImportSpecifier } from './ast';
+import { traverse } from './traverse';
 
 function wrappedParse(parse: Parser<any>['parse']): Parser<any>['parse'] {
   return (text, parsers, options) => {
@@ -14,28 +11,21 @@ function wrappedParse(parse: Parser<any>['parse']): Parser<any>['parse'] {
   };
 }
 
-function preprocess(ast: ASTBody): AST {
+function preprocess(ast: AstTree): AST {
   const body = ast.body;
   const importPathByImportName = new Map<ImportName, ImportPath>();
-  body.forEach(node => {
-    switch (node.type) {
-      case 'ImportDeclaration':
-        mapImportPathByImportName(node, importPathByImportName);
-        return;
-      default:
-        sortImportMetadata(node, importPathByImportName);
-    }
+
+  traverse(body as any, {
+    ImportDeclaration(node: ImportDeclaration) {
+      mapImportPathByImportName(node, importPathByImportName);
+    },
+    CallExpression(node: CallExpression) {
+      sortImportMetadata(node, importPathByImportName);
+    },
   });
+
   return ast;
 }
-
-export const languages = [
-  {
-    name: 'sort-module-angular',
-    parsers: ['typescript'],
-    extensions: ['.ts'],
-  },
-];
 
 export const parsers = {
   typescript: {
